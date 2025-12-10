@@ -1,0 +1,17 @@
+u,v,cost
+A,B,4
+A,C,2
+A,D,7
+B,E,3
+B,F,5
+C,D,3
+C,G,4
+D,H,2
+E,I,6
+F,I,4
+G,H,1
+G,J,5
+H,J,3
+I,K,2
+J,K,4
+A,K,25

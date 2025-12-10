@@ -1,0 +1,5 @@
+PyQt5==5.15.9
+networkx==3.1
+matplotlib==3.7.1
+pandas
+# gurobipy is provided by Gurobi installation

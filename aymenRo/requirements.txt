@@ -1,0 +1,5 @@
+gurobipy
+PyQt5
+pandas
+numpy
+matplotlib

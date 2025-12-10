@@ -1,0 +1,15 @@
+u,v,cost
+Paris,Lyon,2.5
+Paris,Marseille,4.2
+Paris,Bordeaux,3.1
+Lyon,Marseille,1.8
+Lyon,Nice,3.5
+Marseille,Nice,1.2
+Bordeaux,Toulouse,1.5
+Toulouse,Marseille,2.8
+Nice,Monaco,0.5
+Lyon,Dijon,1.1
+Dijon,Paris,1.6
+Bordeaux,Paris,3.0
+Toulouse,Nice,4.5
+Monaco,Marseille,1.3

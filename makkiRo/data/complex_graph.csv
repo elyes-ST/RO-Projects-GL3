@@ -1,0 +1,9 @@
+u,v,cost
+A,B,5
+A,C,3
+B,D,2
+C,D,4
+C,E,2
+D,F,3
+E,F,2
+A,F,20

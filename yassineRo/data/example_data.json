@@ -1,0 +1,68 @@
+{
+    "nodes": [
+        {
+            "id": "Usine_A",
+            "demand": 100
+        },
+        {
+            "id": "Usine_B",
+            "demand": 50
+        },
+        {
+            "id": "Client_1",
+            "demand": -80
+        },
+        {
+            "id": "Client_2",
+            "demand": -70
+        },
+        {
+            "id": "Entrepot_Aux",
+            "demand": 0
+        }
+    ],
+    "arcs": [
+        {
+            "source": "Usine_A",
+            "target": "Client_1",
+            "fixed_cost": 1000,
+            "var_cost": 2.5,
+            "capacity": 100
+        },
+        {
+            "source": "Usine_A",
+            "target": "Entrepot_Aux",
+            "fixed_cost": 300,
+            "var_cost": 1.0,
+            "capacity": 150
+        },
+        {
+            "source": "Usine_B",
+            "target": "Client_2",
+            "fixed_cost": 900,
+            "var_cost": 3.0,
+            "capacity": 100
+        },
+        {
+            "source": "Entrepot_Aux",
+            "target": "Client_1",
+            "fixed_cost": 200,
+            "var_cost": 1.5,
+            "capacity": 80
+        },
+        {
+            "source": "Entrepot_Aux",
+            "target": "Client_2",
+            "fixed_cost": 200,
+            "var_cost": 1.5,
+            "capacity": 80
+        },
+        {
+            "source": "Usine_A",
+            "target": "Usine_B",
+            "fixed_cost": 150,
+            "var_cost": 0.5,
+            "capacity": 50
+        }
+    ]
+}

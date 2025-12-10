@@ -1,0 +1,5 @@
+PyQt5
+gurobipy
+matplotlib
+networkx
+numpy
