@@ -136,7 +136,7 @@ class ProjectLauncher(QMainWindow):
             ],
             "#f59e0b",
             "#d97706",
-            lambda: self.launch_project("logistique")
+            lambda: self.launch_project("ahmedRo")
         )
         projects_layout.addWidget(ahmed_card)
         
@@ -363,8 +363,8 @@ class ProjectLauncher(QMainWindow):
         elif project_name == "aymenRo":
             project_path = os.path.join(base_path, "aymenRo")
             main_file = os.path.join(project_path, "main.py")
-        elif project_name == "logistique":
-            project_path = os.path.join(base_path, "logistique")
+        elif project_name == "ahmedRo":
+            project_path = os.path.join(base_path, "ahmedRo")
             main_file = os.path.join(project_path, "main.py")
         else:
             return
