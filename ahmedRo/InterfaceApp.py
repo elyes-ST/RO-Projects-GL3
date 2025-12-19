@@ -917,126 +917,99 @@ class OrdonnancementApp(QMainWindow):
                 self._update_status("🔄 Tous les graphiques actualisés", "#2196F3")
                 
     def draw_gantt(self, N, M, solution, d, r, prep):
-        """Dessine un diagramme de Gantt moderne et informatif."""
+        """Dessine un diagramme de Gantt simple et clair."""
         self.sc.axes.clear()
         
-        # Configuration du style
-        colors = plt.cm.get_cmap('tab20', N)
+        # Palette de couleurs simple et distincte
+        base_colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336', 
+                       '#00BCD4', '#FFEB3B', '#8BC34A', '#E91E63', '#3F51B5']
         
         solution_sorted = sorted(solution, key=lambda x: (x['Quai'], x['Debut_Chargement']))
         
-        legend_elements = []
-        
-        for i, res in enumerate(solution_sorted):
+        for res in solution_sorted:
             camion_index = res['Camion'] - 1
             quai = res['Quai']
             start_op = res['Debut_Chargement']
             end_op = res['Fin_Operation']
-            duration_chargement = end_op - start_op
-            prep_time = prep[camion_index]
-            prep_start = start_op - prep_time
+            duration = end_op - start_op
             due_date = d[camion_index]
             
-            color = colors(camion_index)
+            color = base_colors[camion_index % len(base_colors)]
             
-            # Barre de chargement principale
-            bar = self.sc.axes.barh(
-                quai, duration_chargement,
+            # Barre de chargement principale (simple et nette)
+            self.sc.axes.barh(
+                quai, duration,
                 left=start_op,
-                height=0.7,
+                height=0.5,
                 color=color,
-                alpha=0.9,
+                alpha=0.85,
                 edgecolor='white',
-                linewidth=2
+                linewidth=1.5
             )
             
-            # Barre de préparation
-            if prep_time > 0:
-                self.sc.axes.barh(
-                    quai, prep_time,
-                    left=prep_start,
-                    height=0.35,
-                    color=color,
-                    alpha=0.4,
-                    edgecolor='white',
-                    linewidth=1,
-                    linestyle='--'
-                )
-            
-            # Marque de deadline
-            self.sc.axes.plot(
-                [due_date, due_date], 
-                [quai - 0.45, quai + 0.45],
-                '--', 
+            # Ligne de deadline (simple)
+            self.sc.axes.axvline(
+                x=due_date, 
+                ymin=(quai - 0.4) / (M + 1), 
+                ymax=(quai + 0.4) / (M + 1),
                 color='#FFC107', 
-                linewidth=2.5, 
-                alpha=0.8
+                linewidth=2, 
+                linestyle='--',
+                alpha=0.7
             )
             
-            # Marque de retard
+            # Indicateur de retard (si applicable)
             if end_op > due_date:
-                self.sc.axes.barh(
-                    quai, end_op - due_date,
-                    left=due_date,
-                    height=0.7,
-                    color='none',
-                    edgecolor='#f44336',
-                    hatch='///',
-                    linewidth=0,
+                self.sc.axes.plot(
+                    [due_date, end_op],
+                    [quai, quai],
+                    color='#f44336',
+                    linewidth=4,
                     alpha=0.6
                 )
             
-            # Label du camion
+            # Label du camion (simple)
             self.sc.axes.text(
-                start_op + duration_chargement / 2, quai,
+                start_op + duration / 2, quai,
                 f'C{camion_index+1}',
                 ha='center', va='center',
                 color='white',
-                fontsize=11,
-                fontweight='bold',
-                bbox=dict(boxstyle='round,pad=0.3', facecolor='black', alpha=0.3)
+                fontsize=10,
+                fontweight='bold'
             )
-            
-            # Légende
-            if camion_index not in [le.get_label() for le in legend_elements]:
-                legend_elements.append(
-                    mpatches.Patch(color=color, label=f'Camion {camion_index+1}')
-                )
         
-        # Configuration des axes
+        # Configuration des axes (épurée)
         self.sc.axes.set_yticks(np.arange(1, M + 1))
-        self.sc.axes.set_yticklabels([f'🏭 Quai {k+1}' for k in range(M)])
-        self.sc.axes.set_xlabel("Temps (unités)", color='white', fontsize=12, fontweight='bold')
-        self.sc.axes.set_ylabel("Quais de Chargement", color='white', fontsize=12, fontweight='bold')
+        self.sc.axes.set_yticklabels([f'Quai {k+1}' for k in range(M)], fontsize=11)
+        self.sc.axes.set_xlabel("Temps", color='white', fontsize=12)
+        self.sc.axes.set_ylabel("Quais", color='white', fontsize=12)
         self.sc.axes.set_title(
-            "📊 Diagramme de Gantt - Séquencement Optimal", 
+            "Diagramme de Gantt - Planning d'Ordonnancement", 
             color='white', 
-            fontsize=14, 
-            fontweight='bold',
-            pad=20
+            fontsize=13, 
+            pad=15
         )
-        self.sc.axes.grid(axis='x', linestyle='--', alpha=0.3, color='white')
+        self.sc.axes.grid(axis='x', linestyle=':', alpha=0.4, color='gray')
         
-        # Légende
-        if legend_elements:
-            self.sc.axes.legend(
-                handles=legend_elements,
-                loc='upper right',
-                facecolor='#2b2b2b',
-                edgecolor='white',
-                fontsize=10
-            )
+        # Légende simple
+        deadline_line = plt.Line2D([0], [0], color='#FFC107', linewidth=2, linestyle='--', label='Deadline')
+        delay_line = plt.Line2D([0], [0], color='#f44336', linewidth=4, alpha=0.6, label='Retard')
+        self.sc.axes.legend(
+            handles=[deadline_line, delay_line],
+            loc='upper right',
+            facecolor='#2b2b2b',
+            edgecolor='white',
+            fontsize=9
+        )
         
-        # Ajustement des limites
-        all_starts = [res['Debut_Chargement'] for res in solution_sorted]
-        start_min = min(all_starts) if all_starts else 0
-        self.sc.axes.set_xlim(left=max(0, start_min - 5))
+        # Marges
+        self.sc.axes.set_ylim(0.4, M + 0.6)
         
         self.sc.fig.tight_layout()
         self.sc.draw()
         
     def draw_utilization_chart(self, N, M, solution, p):
-        """Dessine un graphique d'utilisation des quais."""
+        """Dessine un graphique simplifié d'utilisation des quais."""
         self.chart1_canvas.axes.clear()
         
         # Calculer le temps de travail par quai
@@ -1046,32 +1019,40 @@ class OrdonnancementApp(QMainWindow):
             camion_idx = res['Camion'] - 1
             workload_per_dock[quai_idx] += p[camion_idx]
         
-        # Créer le graphique en barres
+        # Graphique en barres simple
         quais = [f'Quai {i+1}' for i in range(M)]
-        colors_palette = plt.cm.get_cmap('viridis', M)
-        colors = [colors_palette(i) for i in range(M)]
+        bars = self.chart1_canvas.axes.bar(
+            quais, workload_per_dock, 
+            color='#2196F3', 
+            alpha=0.8, 
+            edgecolor='white', 
+            linewidth=1.5,
+            width=0.6
+        )
         
-        bars = self.chart1_canvas.axes.bar(quais, workload_per_dock, color=colors, alpha=0.8, edgecolor='white', linewidth=2)
-        
-        # Ajouter les valeurs sur les barres
+        # Valeurs au-dessus des barres
         for bar, value in zip(bars, workload_per_dock):
             height = bar.get_height()
             self.chart1_canvas.axes.text(
-                bar.get_x() + bar.get_width()/2., height,
+                bar.get_x() + bar.get_width()/2., height + 0.5,
                 f'{value:.1f}',
                 ha='center', va='bottom', color='white', fontsize=11, fontweight='bold'
             )
         
-        self.chart1_canvas.axes.set_xlabel('Quais', color='white', fontsize=12, fontweight='bold')
-        self.chart1_canvas.axes.set_ylabel('Temps de Travail (unités)', color='white', fontsize=12, fontweight='bold')
-        self.chart1_canvas.axes.set_title('⚙️ Charge de Travail par Quai', color='white', fontsize=14, fontweight='bold', pad=15)
-        self.chart1_canvas.axes.grid(axis='y', linestyle='--', alpha=0.3, color='white')
+        self.chart1_canvas.axes.set_xlabel('Quais', color='white', fontsize=11)
+        self.chart1_canvas.axes.set_ylabel('Temps de Travail', color='white', fontsize=11)
+        self.chart1_canvas.axes.set_title('Charge de Travail par Quai', color='white', fontsize=12, pad=12)
+        self.chart1_canvas.axes.grid(axis='y', linestyle=':', alpha=0.3, color='gray')
+        
+        # Ajouter un peu d'espace en haut
+        max_workload = max(workload_per_dock) if workload_per_dock else 1
+        self.chart1_canvas.axes.set_ylim(0, max_workload * 1.15)
         
         self.chart1_canvas.fig.tight_layout()
         self.chart1_canvas.draw()
         
     def draw_delays_chart(self, N, solution, d):
-        """Dessine un graphique de distribution des retards."""
+        """Dessine un graphique simplifié des retards."""
         self.chart2_canvas.axes.clear()
         
         # Préparer les données
@@ -1081,80 +1062,90 @@ class OrdonnancementApp(QMainWindow):
         # Couleurs : vert si à temps, rouge si en retard
         colors = ['#4CAF50' if r == 0 else '#f44336' for r in retards]
         
-        bars = self.chart2_canvas.axes.bar(camions, retards, color=colors, alpha=0.8, edgecolor='white', linewidth=2)
+        bars = self.chart2_canvas.axes.bar(
+            camions, retards, 
+            color=colors, 
+            alpha=0.8, 
+            edgecolor='white', 
+            linewidth=1.5,
+            width=0.6
+        )
         
-        # Ajouter les valeurs
+        # Valeurs uniquement pour les retards
         for bar, value in zip(bars, retards):
             if value > 0:
                 height = bar.get_height()
                 self.chart2_canvas.axes.text(
-                    bar.get_x() + bar.get_width()/2., height,
+                    bar.get_x() + bar.get_width()/2., height + 0.2,
                     f'{value:.1f}',
                     ha='center', va='bottom', color='white', fontsize=10, fontweight='bold'
                 )
         
-        self.chart2_canvas.axes.set_xlabel('Camions', color='white', fontsize=12, fontweight='bold')
-        self.chart2_canvas.axes.set_ylabel('Retard (unités)', color='white', fontsize=12, fontweight='bold')
-        self.chart2_canvas.axes.set_title('⏰ Retards par Camion', color='white', fontsize=14, fontweight='bold', pad=15)
-        self.chart2_canvas.axes.grid(axis='y', linestyle='--', alpha=0.3, color='white')
+        self.chart2_canvas.axes.set_xlabel('Camions', color='white', fontsize=11)
+        self.chart2_canvas.axes.set_ylabel('Retard', color='white', fontsize=11)
+        self.chart2_canvas.axes.set_title('Retards par Camion', color='white', fontsize=12, pad=12)
+        self.chart2_canvas.axes.grid(axis='y', linestyle=':', alpha=0.3, color='gray')
         
         # Ligne de référence à 0
         self.chart2_canvas.axes.axhline(y=0, color='white', linestyle='-', linewidth=1, alpha=0.5)
+        
+        # Ajouter un peu d'espace en haut si des retards existent
+        max_delay = max(retards) if retards else 1
+        if max_delay > 0:
+            self.chart2_canvas.axes.set_ylim(-0.5, max_delay * 1.15)
         
         self.chart2_canvas.fig.tight_layout()
         self.chart2_canvas.draw()
         
     def draw_timeline_chart(self, N, solution, p, r, prep):
-        """Dessine un graphique chronologique par camion."""
+        """Dessine un graphique chronologique simplifié par camion."""
         self.analysis1_canvas.axes.clear()
         
         # Préparer les données
         camions = [f'C{res["Camion"]}' for res in solution]
-        
-        # Composantes du temps pour chaque camion
-        disponibilites = [r[res['Camion']-1] for res in solution]
-        preparations = [prep[res['Camion']-1] for res in solution]
         debuts = [res['Debut_Chargement'] for res in solution]
         durees = [p[res['Camion']-1] for res in solution]
+        preparations = [prep[res['Camion']-1] for res in solution]
         
-        # Attentes (temps entre disponibilité+préparation et début réel)
-        attentes = [max(0, debuts[i] - (disponibilites[i] + preparations[i])) for i in range(N)]
+        # Attentes (temps avant le chargement)
+        attentes = [max(0, debuts[i] - preparations[i]) for i in range(N)]
         
-        # Graphique en barres empilées
-        bar_width = 0.6
+        # Graphique en barres empilées simplifié
+        bar_width = 0.5
         indices = np.arange(N)
         
-        # Barre 1: Disponibilité + Préparation
-        p1 = self.analysis1_canvas.axes.barh(indices, disponibilites, bar_width, 
-                                             label='Disponibilité', color='#9E9E9E', alpha=0.7)
+        # Barre 1: Attente
+        self.analysis1_canvas.axes.barh(
+            indices, attentes, bar_width, 
+            label='Attente', color='#9E9E9E', alpha=0.7, edgecolor='white', linewidth=0.5
+        )
         
         # Barre 2: Préparation
-        p2 = self.analysis1_canvas.axes.barh(indices, preparations, bar_width, 
-                                             left=disponibilites, label='Préparation', color='#FF9800', alpha=0.7)
+        self.analysis1_canvas.axes.barh(
+            indices, preparations, bar_width, 
+            left=attentes, label='Préparation', color='#FF9800', alpha=0.8, edgecolor='white', linewidth=0.5
+        )
         
-        # Barre 3: Attente
-        left_attente = [disponibilites[i] + preparations[i] for i in range(N)]
-        p3 = self.analysis1_canvas.axes.barh(indices, attentes, bar_width, 
-                                             left=left_attente, label='Attente', color='#2196F3', alpha=0.7)
-        
-        # Barre 4: Chargement
-        left_chargement = [left_attente[i] + attentes[i] for i in range(N)]
-        p4 = self.analysis1_canvas.axes.barh(indices, durees, bar_width, 
-                                             left=left_chargement, label='Chargement', color='#4CAF50', alpha=0.8)
+        # Barre 3: Chargement
+        left_chargement = [attentes[i] + preparations[i] for i in range(N)]
+        self.analysis1_canvas.axes.barh(
+            indices, durees, bar_width, 
+            left=left_chargement, label='Chargement', color='#4CAF50', alpha=0.8, edgecolor='white', linewidth=0.5
+        )
         
         self.analysis1_canvas.axes.set_yticks(indices)
-        self.analysis1_canvas.axes.set_yticklabels(camions)
-        self.analysis1_canvas.axes.set_xlabel('Temps (unités)', color='white', fontsize=12, fontweight='bold')
-        self.analysis1_canvas.axes.set_ylabel('Camions', color='white', fontsize=12, fontweight='bold')
-        self.analysis1_canvas.axes.set_title('⏱️ Décomposition du Temps par Camion', color='white', fontsize=14, fontweight='bold', pad=15)
-        self.analysis1_canvas.axes.legend(loc='upper right', facecolor='#2b2b2b', edgecolor='white', fontsize=9)
-        self.analysis1_canvas.axes.grid(axis='x', linestyle='--', alpha=0.3, color='white')
+        self.analysis1_canvas.axes.set_yticklabels(camions, fontsize=10)
+        self.analysis1_canvas.axes.set_xlabel('Temps', color='white', fontsize=11)
+        self.analysis1_canvas.axes.set_ylabel('Camions', color='white', fontsize=11)
+        self.analysis1_canvas.axes.set_title('Décomposition du Temps par Camion', color='white', fontsize=12, pad=12)
+        self.analysis1_canvas.axes.legend(loc='lower right', facecolor='#2b2b2b', edgecolor='white', fontsize=9)
+        self.analysis1_canvas.axes.grid(axis='x', linestyle=':', alpha=0.3, color='gray')
         
         self.analysis1_canvas.fig.tight_layout()
         self.analysis1_canvas.draw()
         
     def draw_workload_pie(self, N, M, solution, p):
-        """Dessine un diagramme circulaire de répartition du travail."""
+        """Dessine un diagramme circulaire simplifié de répartition du travail."""
         self.analysis2_canvas.axes.clear()
         
         # Calculer le temps de travail par quai
@@ -1165,35 +1156,36 @@ class OrdonnancementApp(QMainWindow):
             workload_per_dock[quai_idx] += p[camion_idx]
         
         # Filtrer les quais avec du travail
-        labels = [f'Quai {i+1}\n({workload_per_dock[i]:.1f}u)' for i in range(M) if workload_per_dock[i] > 0]
+        labels = [f'Quai {i+1}' for i in range(M) if workload_per_dock[i] > 0]
         sizes = [workload_per_dock[i] for i in range(M) if workload_per_dock[i] > 0]
         
-        # Couleurs
-        colors_palette = plt.cm.get_cmap('Set3', len(sizes))
-        colors = [colors_palette(i) for i in range(len(sizes))]
+        # Couleurs simples et distinctes
+        base_colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336', '#00BCD4']
+        colors = [base_colors[i % len(base_colors)] for i in range(len(sizes))]
         
-        # Créer le camembert
+        # Créer le camembert (simplifié)
         wedges, texts, autotexts = self.analysis2_canvas.axes.pie(
             sizes, 
             labels=labels, 
             colors=colors,
             autopct='%1.1f%%',
             startangle=90,
-            textprops={'color': 'white', 'fontsize': 11, 'fontweight': 'bold'}
+            textprops={'color': 'white', 'fontsize': 10},
+            wedgeprops={'edgecolor': 'white', 'linewidth': 1.5}
         )
         
-        # Style des pourcentages
+        # Style des pourcentages (plus lisible)
         for autotext in autotexts:
-            autotext.set_color('black')
-            autotext.set_fontsize(12)
+            autotext.set_color('white')
+            autotext.set_fontsize(11)
             autotext.set_fontweight('bold')
+            autotext.set_bbox(dict(boxstyle='round,pad=0.3', facecolor='black', alpha=0.5, edgecolor='none'))
         
         self.analysis2_canvas.axes.set_title(
-            '🥧 Répartition de la Charge de Travail', 
+            'Répartition de la Charge de Travail', 
             color='white', 
-            fontsize=14, 
-            fontweight='bold',
-            pad=15
+            fontsize=12,
+            pad=12
         )
         
         self.analysis2_canvas.fig.tight_layout()
