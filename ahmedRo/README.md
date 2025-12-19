@@ -37,7 +37,43 @@ Application d'optimisation logistique utilisant la Programmation Linéaire en No
 - 📊 **Indicateur de statut** en temps réel avec codes couleur
 - ⏳ **Barre de progression** pendant l'optimisation
 
-### 3. Visualisations Améliorées 📊
+### 3. Visualisations Complètes 📊
+
+#### 5 Types de Diagrammes Automatiques
+
+L'application génère automatiquement **5 visualisations différentes** après chaque optimisation :
+
+1. **📈 Diagramme de Gantt** (Onglet 3)
+
+   - Planning visuel complet des opérations
+   - Barres de chargement et de préparation
+   - Marqueurs de deadlines et retards
+   - Légende par camion avec couleurs distinctes
+
+2. **⚙️ Charge de Travail par Quai** (Onglet 4)
+
+   - Graphique en barres comparant les quais
+   - Détection des déséquilibres de charge
+   - Valeurs numériques affichées
+
+3. **⏰ Retards par Camion** (Onglet 4)
+
+   - Code couleur : vert (à temps) / rouge (en retard)
+   - Identification rapide des problèmes
+   - Magnitude des retards
+
+4. **⏱️ Décomposition du Temps** (Onglet 5)
+
+   - Analyse détaillée par camion
+   - 4 composantes : disponibilité, préparation, attente, chargement
+   - Identification des inefficacités
+
+5. **🥧 Répartition de la Charge** (Onglet 5)
+   - Diagramme circulaire (camembert)
+   - Distribution en pourcentage
+   - Vue d'ensemble de l'équilibre
+
+👉 **Voir [VISUALISATIONS.md](VISUALISATIONS.md) pour le guide détaillé**
 
 #### Widget de Statistiques
 

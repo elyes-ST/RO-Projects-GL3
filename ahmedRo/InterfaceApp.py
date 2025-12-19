@@ -383,14 +383,20 @@ class OrdonnancementApp(QMainWindow):
         self.tab_input = QWidget()
         self.tab_results = QWidget()
         self.tab_gantt = QWidget()
+        self.tab_charts = QWidget()
+        self.tab_analysis = QWidget()
         
         self.tabs.addTab(self.tab_input, "📝 Saisie des Données")
         self.tabs.addTab(self.tab_results, "📊 Résultats & Métriques")
         self.tabs.addTab(self.tab_gantt, "📈 Diagramme de Gantt")
+        self.tabs.addTab(self.tab_charts, "📊 Graphiques Détaillés")
+        self.tabs.addTab(self.tab_analysis, "🔍 Analyse Avancée")
         
         self._setup_input_tab()
         self._setup_results_tab()
         self._setup_gantt_tab()
+        self._setup_charts_tab()
+        self._setup_analysis_tab()
         
         main_splitter.addWidget(self.tabs)
         
@@ -524,6 +530,52 @@ class OrdonnancementApp(QMainWindow):
         # Canvas Matplotlib
         self.sc = MplCanvas(self, width=12, height=7, dpi=100)
         gantt_layout.addWidget(self.sc)
+        
+    def _setup_charts_tab(self):
+        """Configuration de l'onglet des graphiques détaillés."""
+        charts_layout = QVBoxLayout(self.tab_charts)
+        charts_layout.setSpacing(10)
+        
+        # Titre
+        title = QLabel("📊 Visualisations Détaillées")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #4CAF50; padding: 10px;")
+        charts_layout.addWidget(title)
+        
+        # Conteneur pour les graphiques
+        charts_container = QSplitter(Qt.Vertical)
+        
+        # Graphique 1: Utilisation des quais
+        self.chart1_canvas = MplCanvas(self, width=10, height=4, dpi=100)
+        charts_container.addWidget(self.chart1_canvas)
+        
+        # Graphique 2: Distribution des retards
+        self.chart2_canvas = MplCanvas(self, width=10, height=4, dpi=100)
+        charts_container.addWidget(self.chart2_canvas)
+        
+        charts_layout.addWidget(charts_container)
+        
+    def _setup_analysis_tab(self):
+        """Configuration de l'onglet d'analyse avancée."""
+        analysis_layout = QVBoxLayout(self.tab_analysis)
+        analysis_layout.setSpacing(10)
+        
+        # Titre
+        title = QLabel("🔍 Analyse de Performance Avancée")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #4CAF50; padding: 10px;")
+        analysis_layout.addWidget(title)
+        
+        # Conteneur pour les graphiques d'analyse
+        analysis_container = QSplitter(Qt.Vertical)
+        
+        # Graphique 1: Temps par camion (barres)
+        self.analysis1_canvas = MplCanvas(self, width=10, height=4, dpi=100)
+        analysis_container.addWidget(self.analysis1_canvas)
+        
+        # Graphique 2: Charge de travail par quai (camembert)
+        self.analysis2_canvas = MplCanvas(self, width=10, height=4, dpi=100)
+        analysis_container.addWidget(self.analysis2_canvas)
+        
+        analysis_layout.addWidget(analysis_container)
         
     def update_tables_structure(self):
         """Met à jour les dimensions des tableaux de saisie."""
@@ -835,6 +887,14 @@ class OrdonnancementApp(QMainWindow):
         # Génération du diagramme de Gantt
         self.draw_gantt(N, M, solution, d, r, prep)
         
+        # Génération des graphiques détaillés
+        self.draw_utilization_chart(N, M, solution, p)
+        self.draw_delays_chart(N, solution, d)
+        
+        # Génération des graphiques d'analyse
+        self.draw_timeline_chart(N, solution, p, r, prep)
+        self.draw_workload_pie(N, M, solution, p)
+        
         # Activer les boutons d'export
         self.export_btn.setEnabled(True)
         self.refresh_gantt_btn.setEnabled(True)
@@ -843,13 +903,18 @@ class OrdonnancementApp(QMainWindow):
         self.tabs.setCurrentIndex(1)  # Passer à l'onglet résultats
         
     def refresh_gantt(self):
-        """Actualise le diagramme de Gantt."""
+        """Actualise tous les diagrammes."""
         if self.current_solution:
             data = self.get_input_data()
             if data:
                 N, M, p, r, d, prep, a, C_swap = data
+                # Rafraîchir tous les graphiques
                 self.draw_gantt(N, M, self.current_solution, d, r, prep)
-                self._update_status("🔄 Gantt actualisé", "#2196F3")
+                self.draw_utilization_chart(N, M, self.current_solution, p)
+                self.draw_delays_chart(N, self.current_solution, d)
+                self.draw_timeline_chart(N, self.current_solution, p, r, prep)
+                self.draw_workload_pie(N, M, self.current_solution, p)
+                self._update_status("🔄 Tous les graphiques actualisés", "#2196F3")
                 
     def draw_gantt(self, N, M, solution, d, r, prep):
         """Dessine un diagramme de Gantt moderne et informatif."""
@@ -969,6 +1034,170 @@ class OrdonnancementApp(QMainWindow):
         
         self.sc.fig.tight_layout()
         self.sc.draw()
+        
+    def draw_utilization_chart(self, N, M, solution, p):
+        """Dessine un graphique d'utilisation des quais."""
+        self.chart1_canvas.axes.clear()
+        
+        # Calculer le temps de travail par quai
+        workload_per_dock = [0] * M
+        for res in solution:
+            quai_idx = res['Quai'] - 1
+            camion_idx = res['Camion'] - 1
+            workload_per_dock[quai_idx] += p[camion_idx]
+        
+        # Créer le graphique en barres
+        quais = [f'Quai {i+1}' for i in range(M)]
+        colors_palette = plt.cm.get_cmap('viridis', M)
+        colors = [colors_palette(i) for i in range(M)]
+        
+        bars = self.chart1_canvas.axes.bar(quais, workload_per_dock, color=colors, alpha=0.8, edgecolor='white', linewidth=2)
+        
+        # Ajouter les valeurs sur les barres
+        for bar, value in zip(bars, workload_per_dock):
+            height = bar.get_height()
+            self.chart1_canvas.axes.text(
+                bar.get_x() + bar.get_width()/2., height,
+                f'{value:.1f}',
+                ha='center', va='bottom', color='white', fontsize=11, fontweight='bold'
+            )
+        
+        self.chart1_canvas.axes.set_xlabel('Quais', color='white', fontsize=12, fontweight='bold')
+        self.chart1_canvas.axes.set_ylabel('Temps de Travail (unités)', color='white', fontsize=12, fontweight='bold')
+        self.chart1_canvas.axes.set_title('⚙️ Charge de Travail par Quai', color='white', fontsize=14, fontweight='bold', pad=15)
+        self.chart1_canvas.axes.grid(axis='y', linestyle='--', alpha=0.3, color='white')
+        
+        self.chart1_canvas.fig.tight_layout()
+        self.chart1_canvas.draw()
+        
+    def draw_delays_chart(self, N, solution, d):
+        """Dessine un graphique de distribution des retards."""
+        self.chart2_canvas.axes.clear()
+        
+        # Préparer les données
+        camions = [f'C{res["Camion"]}' for res in solution]
+        retards = [res['Retard'] for res in solution]
+        
+        # Couleurs : vert si à temps, rouge si en retard
+        colors = ['#4CAF50' if r == 0 else '#f44336' for r in retards]
+        
+        bars = self.chart2_canvas.axes.bar(camions, retards, color=colors, alpha=0.8, edgecolor='white', linewidth=2)
+        
+        # Ajouter les valeurs
+        for bar, value in zip(bars, retards):
+            if value > 0:
+                height = bar.get_height()
+                self.chart2_canvas.axes.text(
+                    bar.get_x() + bar.get_width()/2., height,
+                    f'{value:.1f}',
+                    ha='center', va='bottom', color='white', fontsize=10, fontweight='bold'
+                )
+        
+        self.chart2_canvas.axes.set_xlabel('Camions', color='white', fontsize=12, fontweight='bold')
+        self.chart2_canvas.axes.set_ylabel('Retard (unités)', color='white', fontsize=12, fontweight='bold')
+        self.chart2_canvas.axes.set_title('⏰ Retards par Camion', color='white', fontsize=14, fontweight='bold', pad=15)
+        self.chart2_canvas.axes.grid(axis='y', linestyle='--', alpha=0.3, color='white')
+        
+        # Ligne de référence à 0
+        self.chart2_canvas.axes.axhline(y=0, color='white', linestyle='-', linewidth=1, alpha=0.5)
+        
+        self.chart2_canvas.fig.tight_layout()
+        self.chart2_canvas.draw()
+        
+    def draw_timeline_chart(self, N, solution, p, r, prep):
+        """Dessine un graphique chronologique par camion."""
+        self.analysis1_canvas.axes.clear()
+        
+        # Préparer les données
+        camions = [f'C{res["Camion"]}' for res in solution]
+        
+        # Composantes du temps pour chaque camion
+        disponibilites = [r[res['Camion']-1] for res in solution]
+        preparations = [prep[res['Camion']-1] for res in solution]
+        debuts = [res['Debut_Chargement'] for res in solution]
+        durees = [p[res['Camion']-1] for res in solution]
+        
+        # Attentes (temps entre disponibilité+préparation et début réel)
+        attentes = [max(0, debuts[i] - (disponibilites[i] + preparations[i])) for i in range(N)]
+        
+        # Graphique en barres empilées
+        bar_width = 0.6
+        indices = np.arange(N)
+        
+        # Barre 1: Disponibilité + Préparation
+        p1 = self.analysis1_canvas.axes.barh(indices, disponibilites, bar_width, 
+                                             label='Disponibilité', color='#9E9E9E', alpha=0.7)
+        
+        # Barre 2: Préparation
+        p2 = self.analysis1_canvas.axes.barh(indices, preparations, bar_width, 
+                                             left=disponibilites, label='Préparation', color='#FF9800', alpha=0.7)
+        
+        # Barre 3: Attente
+        left_attente = [disponibilites[i] + preparations[i] for i in range(N)]
+        p3 = self.analysis1_canvas.axes.barh(indices, attentes, bar_width, 
+                                             left=left_attente, label='Attente', color='#2196F3', alpha=0.7)
+        
+        # Barre 4: Chargement
+        left_chargement = [left_attente[i] + attentes[i] for i in range(N)]
+        p4 = self.analysis1_canvas.axes.barh(indices, durees, bar_width, 
+                                             left=left_chargement, label='Chargement', color='#4CAF50', alpha=0.8)
+        
+        self.analysis1_canvas.axes.set_yticks(indices)
+        self.analysis1_canvas.axes.set_yticklabels(camions)
+        self.analysis1_canvas.axes.set_xlabel('Temps (unités)', color='white', fontsize=12, fontweight='bold')
+        self.analysis1_canvas.axes.set_ylabel('Camions', color='white', fontsize=12, fontweight='bold')
+        self.analysis1_canvas.axes.set_title('⏱️ Décomposition du Temps par Camion', color='white', fontsize=14, fontweight='bold', pad=15)
+        self.analysis1_canvas.axes.legend(loc='upper right', facecolor='#2b2b2b', edgecolor='white', fontsize=9)
+        self.analysis1_canvas.axes.grid(axis='x', linestyle='--', alpha=0.3, color='white')
+        
+        self.analysis1_canvas.fig.tight_layout()
+        self.analysis1_canvas.draw()
+        
+    def draw_workload_pie(self, N, M, solution, p):
+        """Dessine un diagramme circulaire de répartition du travail."""
+        self.analysis2_canvas.axes.clear()
+        
+        # Calculer le temps de travail par quai
+        workload_per_dock = [0] * M
+        for res in solution:
+            quai_idx = res['Quai'] - 1
+            camion_idx = res['Camion'] - 1
+            workload_per_dock[quai_idx] += p[camion_idx]
+        
+        # Filtrer les quais avec du travail
+        labels = [f'Quai {i+1}\n({workload_per_dock[i]:.1f}u)' for i in range(M) if workload_per_dock[i] > 0]
+        sizes = [workload_per_dock[i] for i in range(M) if workload_per_dock[i] > 0]
+        
+        # Couleurs
+        colors_palette = plt.cm.get_cmap('Set3', len(sizes))
+        colors = [colors_palette(i) for i in range(len(sizes))]
+        
+        # Créer le camembert
+        wedges, texts, autotexts = self.analysis2_canvas.axes.pie(
+            sizes, 
+            labels=labels, 
+            colors=colors,
+            autopct='%1.1f%%',
+            startangle=90,
+            textprops={'color': 'white', 'fontsize': 11, 'fontweight': 'bold'}
+        )
+        
+        # Style des pourcentages
+        for autotext in autotexts:
+            autotext.set_color('black')
+            autotext.set_fontsize(12)
+            autotext.set_fontweight('bold')
+        
+        self.analysis2_canvas.axes.set_title(
+            '🥧 Répartition de la Charge de Travail', 
+            color='white', 
+            fontsize=14, 
+            fontweight='bold',
+            pad=15
+        )
+        
+        self.analysis2_canvas.fig.tight_layout()
+        self.analysis2_canvas.draw()
         
     def _update_status(self, message, color="#aaa"):
         """Met à jour le label de statut avec animation."""
